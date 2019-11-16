@@ -15,6 +15,21 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
+    def save(self, *args, **kwargs):
+        should_create_user_common_ingredients = False
+        print(self._state.adding)
+        if self._state.adding is True:
+            should_create_user_common_ingredients = True
+            print('creating ucis')
+        else:
+            print('not creating ucis')
+        super(User, self).save(*args, **kwargs)
+        if should_create_user_common_ingredients:
+            from ..recipes.models import UserCommonIngredient, CommonIngredient
+            for ci in CommonIngredient.objects.all():
+                uci = UserCommonIngredient(user=self, common_ingredient=ci)
+                uci.save()
+
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):

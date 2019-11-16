@@ -34,6 +34,8 @@ urlpatterns = [
     url(r'^api/v1/instruction/(?P<id>[0-9]+)$', recipes_views.InstructionAPIView.as_view()),
     url(r'^api/v1/instruction/$', recipes_views.InstructionAPIListView.as_view()),
 
+    url(r'^api/v1/recipes-user-common-ingredients/$', recipes_views.RecipeUserCommonIngredientAPIView.as_view()),
+    url(r'^api/v1/available-recipes/$', recipes_views.AvailableRecipeIngredientUserCommonIngredientAPIView.as_view()),
     # the 'api-root' from django rest-frameworks default router
     # http://www.django-rest-framework.org/api-guide/routers/#defaultrouter
     re_path(r'^$', RedirectView.as_view(url=reverse_lazy('api-root'), permanent=False)),

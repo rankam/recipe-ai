@@ -1,9 +1,49 @@
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from recipeai.recipes.serializers import CommonIngredientSerializer, UserCommonIngredientSerializer, IngredientSerializer, RecipeSerializer, InstructionSerializer
+from recipeai.recipes.serializers import CommonIngredientSerializer
+from recipeai.recipes.serializers import UserCommonIngredientSerializer, IngredientSerializer, RecipeSerializer
+from recipeai.recipes.serializers import InstructionSerializer, RecipeIngredientUserCommonIngredientSerializer
+from recipeai.recipes.serializers import AvailableRecipeIngredientUserCommonIngredientSerializer
 from recipeai.recipes.models import CommonIngredient, UserCommonIngredient, Ingredient, Recipe, Instruction
+from .queries import fetch_recipes_by_user
+from .queries import fetch_available_recipes
+import sys, os
 
+
+class AvailableRecipeIngredientUserCommonIngredientAPIView(APIView):
+    def get(self, request):
+        try:
+            missing_ingredients_limit = int(request.query_params.get('missing_ingredients_limit', 1))
+            items = fetch_available_recipes(request.user.id, missing_ingredients_limit)
+            paginator = PageNumberPagination()
+            result_page = paginator.paginate_queryset(items, request)
+            serializer = AvailableRecipeIngredientUserCommonIngredientSerializer(data=result_page, many=True)
+            if serializer.is_valid():
+                return paginator.get_paginated_response(serializer.data)
+            return Response(status=404)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
+            return Response(status=404)
+
+
+class RecipeUserCommonIngredientAPIView(APIView):
+    def get(self, request):
+        try:
+            items = fetch_recipes_by_user(request.user.id)
+            paginator = PageNumberPagination()
+            result_page = paginator.paginate_queryset(items, request)
+            serializer = RecipeIngredientUserCommonIngredientSerializer(data=result_page, many=True)
+            if serializer.is_valid():
+                return paginator.get_paginated_response(serializer.data)
+            return Response(status=404)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
+            return Response(status=404)
 
 class CommonIngredientAPIView(APIView):
 
@@ -179,7 +219,11 @@ class RecipeAPIView(APIView):
 class RecipeAPIListView(APIView):
 
     def get(self, request, format=None):
-        items = Recipe.objects.all()
+        user_id = request.user.id
+        if user_id:
+            items = Recipe.objects.filter(ingredients__user_common_ingredient__user_id=user_id)
+        else:
+            items = Recipe.objects.all()
         paginator = PageNumberPagination()
         result_page = paginator.paginate_queryset(items, request)
         serializer = RecipeSerializer(result_page, many=True)
