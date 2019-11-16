@@ -1,23 +1,8 @@
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from recipeai.recipes.serializers import CommonIngredientSerializer, IngredientSerializer, RecipeSerializer, InstructionSerializer
-from recipeai.recipes.models import CommonIngredient, Ingredient, Recipe, Instruction
-from recipeai.recipes.queries import fetch_available_recipes 
-
-class AvailableRecipesAPIView(APIView):
-
-    def get(self, request, format=None):
-        try:
-            available_recipe_ids = fetch_available_recipes(request.user.id)
-            items = Recipe.objects.filter(pk__in=available_recipe_ids)
-            paginator = PageNumberPagination()
-            result_page = paginator.paginate_queryset(items, request)
-            serializer = RecipeSerializer(result_page, many=True)
-            return paginator.get_paginated_response(serializer.data)
-        except Exception as e:
-            print(f'Error {e}')
-            return Response(status=404)
+from recipeai.recipes.serializers import CommonIngredientSerializer, UserCommonIngredientSerializer, IngredientSerializer, RecipeSerializer, InstructionSerializer
+from recipeai.recipes.models import CommonIngredient, UserCommonIngredient, Ingredient, Recipe, Instruction
 
 
 class CommonIngredientAPIView(APIView):
@@ -67,6 +52,53 @@ class CommonIngredientAPIListView(APIView):
         return Response(serializer.errors, status=400)
 
 
+class UserCommonIngredientAPIView(APIView):
+
+    def get(self, request, id, format=None):
+        try:
+            item = UserCommonIngredient.objects.get(pk=id)
+            serializer = UserCommonIngredientSerializer(item)
+            return Response(serializer.data)
+        except UserCommonIngredient.DoesNotExist:
+            return Response(status=404)
+
+    def put(self, request, id, format=None):
+        try:
+            item = UserCommonIngredient.objects.get(pk=id)
+        except UserCommonIngredient.DoesNotExist:
+            return Response(status=404)
+        serializer = UserCommonIngredientSerializer(item, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request, id, format=None):
+        try:
+            item = UserCommonIngredient.objects.get(pk=id)
+        except UserCommonIngredient.DoesNotExist:
+            return Response(status=404)
+        item.delete()
+        return Response(status=204)
+
+
+class UserCommonIngredientAPIListView(APIView):
+
+    def get(self, request, format=None):
+        items = UserCommonIngredient.objects.all()
+        paginator = PageNumberPagination()
+        result_page = paginator.paginate_queryset(items, request)
+        serializer = UserCommonIngredientSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    def post(self, request, format=None):
+        serializer = UserCommonIngredientSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+
 class IngredientAPIView(APIView):
 
     def get(self, request, id, format=None):
@@ -95,7 +127,6 @@ class IngredientAPIView(APIView):
             return Response(status=404)
         item.delete()
         return Response(status=204)
-    
 
 
 class IngredientAPIListView(APIView):

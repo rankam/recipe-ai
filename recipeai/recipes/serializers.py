@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer
+from recipeai.recipes.models import CommonIngredient, UserCommonIngredient, Ingredient, Recipe, Instruction
 from rest_framework import serializers
-from recipeai.recipes.models import CommonIngredient, Ingredient, Recipe, Instruction
 from recipeai.users.serializers import UserSerializer
 
 class CommonIngredientSerializer(ModelSerializer):
@@ -10,13 +10,19 @@ class CommonIngredientSerializer(ModelSerializer):
         fields = '__all__'
 
 
+class UserCommonIngredientSerializer(ModelSerializer):
+
+    class Meta:
+        model = UserCommonIngredient
+        fields = '__all__'
+
+
 class IngredientSerializer(ModelSerializer):
-    name = serializers.CharField()
-    units = serializers.CharField()
-    unit_type = serializers.CharField()
-    is_available = serializers.BooleanField()
     confidence = serializers.FloatField(required=False)
-    common_ingredient = serializers.CharField(required=False)
+    common_ingredient = CommonIngredientSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
+    user_common_ingredient = UserCommonIngredientSerializer(many=True,
+            read_only=True)
 
     class Meta:
         model = Ingredient
@@ -24,8 +30,11 @@ class IngredientSerializer(ModelSerializer):
 
 
 class RecipeSerializer(ModelSerializer):
-    ingredients = IngredientSerializer(many=True, read_only=True) 
+    ingredients = IngredientSerializer(many=True, read_only=True)
     user = UserSerializer(read_only=True)
+    user_common_ingredient = UserCommonIngredientSerializer(many=True,
+            read_only=True)
+
 
     class Meta:
         model = Recipe
