@@ -6,16 +6,44 @@ from recipeai.recipes.serializers import UserCommonIngredientSerializer, Ingredi
 from recipeai.recipes.serializers import InstructionSerializer, RecipeIngredientUserCommonIngredientSerializer
 from recipeai.recipes.serializers import AvailableRecipeIngredientUserCommonIngredientSerializer
 from recipeai.recipes.models import CommonIngredient, UserCommonIngredient, Ingredient, Recipe, Instruction
+from recipeai.users.models import User
 from .queries import fetch_recipes_by_user
 from .queries import fetch_available_recipes
 import sys, os
+import json
+from rest_framework import viewsets, mixins
+from .ocr.ocado_to_ingredients import parse_and_add_user_common_ingredients
+
+
+class OcadoPOCReceiptToUserCommonIngredientApiView(APIView):
+
+    def post(self, request):
+        try:
+            items = parse_and_add_user_common_ingredients(request.user.id)
+            serializer = UserCommonIngredientSerializer(data=items)
+            if serializer.is_valid():
+                return Response(serializer.data)
+            return Response(status=404)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno, e)
+            return Response(status=404)
+
 
 
 class AvailableRecipeIngredientUserCommonIngredientAPIView(APIView):
+
     def get(self, request):
         try:
-            missing_ingredients_limit = int(request.query_params.get('missing_ingredients_limit', 1))
-            items = fetch_available_recipes(request.user.id, missing_ingredients_limit)
+            missing_ingredients_limit = int(request.query_params.get('missing-ingredients-limit', 0))
+            confidence_level = request.query_params.get('confidence-level')
+            if confidence_level:
+                confidence_level = float(confidence_level) / 100.00
+            else:
+                confidence_level = .99
+            items = fetch_available_recipes(request.user.id, confidence_level,
+                    missing_ingredients_limit)
             paginator = PageNumberPagination()
             result_page = paginator.paginate_queryset(items, request)
             serializer = AvailableRecipeIngredientUserCommonIngredientSerializer(data=result_page, many=True)
@@ -30,6 +58,7 @@ class AvailableRecipeIngredientUserCommonIngredientAPIView(APIView):
 
 
 class RecipeUserCommonIngredientAPIView(APIView):
+
     def get(self, request):
         try:
             items = fetch_recipes_by_user(request.user.id)
@@ -122,14 +151,34 @@ class UserCommonIngredientAPIView(APIView):
         return Response(status=204)
 
 
-class UserCommonIngredientAPIListView(APIView):
+class UserCommonIngredientAPIListView( viewsets.GenericViewSet):
+    serializer_class = UserCommonIngredientSerializer
 
-    def get(self, request, format=None):
-        items = UserCommonIngredient.objects.all()
+    def list(self, request, format=None):
+        if request.query_params.get('is-available'):
+            is_available = json.loads(request.query_params.get('is-available'))
+            items = UserCommonIngredient.objects.filter(user_id=request.user.id,
+                                                        is_available=is_available
+                                                        )
+        else:
+            items = UserCommonIngredient.objects.filter(user_id=request.user.id)
         paginator = PageNumberPagination()
         result_page = paginator.paginate_queryset(items, request)
         serializer = UserCommonIngredientSerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+    def get_queryset(self):
+        if self.request.query_params.get('is-available'):
+            is_available = json.loads(self.request.query_params.get('is-available'))
+            items = UserCommonIngredient.objects.filter(user_id=self.request.user.id,
+                                                        is_available=is_available
+                                                        )
+        else:
+            items = UserCommonIngredient.objects.filter(user_id=self.request.user.id)
+        return items
+
+    def get(self, request, format=None):
+        return self.list(request, format)
 
     def post(self, request, format=None):
         serializer = UserCommonIngredientSerializer(data=request.data)
@@ -179,6 +228,8 @@ class IngredientAPIListView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request, format=None):
+        request.data['user'] = request.user
+        request.data['user_id'] = request.user.id
         serializer = IngredientSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()

@@ -170,7 +170,7 @@ class Common(Configuration):
                 'propagate': False,
             },
             'django.request': {
-                'handlers': ['mail_admins', 'console'],
+                'handlers': ['console'],
                 'level': 'ERROR',
                 'propagate': False,
             },

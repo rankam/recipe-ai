@@ -12,6 +12,9 @@ from .recipes import views as recipes_views
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'users', UserCreateViewSet)
+router.register(r'usercommoningredient',
+        recipes_views.UserCommonIngredientAPIListView,
+        basename='UserCommonIngredient')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -23,7 +26,7 @@ urlpatterns = [
     url(r'^api/v1/commoningredient/$', recipes_views.CommonIngredientAPIListView.as_view()),
   
     url(r'^api/v1/usercommoningredient/(?P<id>[0-9]+)$', recipes_views.UserCommonIngredientAPIView.as_view()),
-    url(r'^api/v1/usercommoningredient/$', recipes_views.UserCommonIngredientAPIListView.as_view()),
+#    url(r'^api/v1/usercommoningredient/$', recipes_views.UserCommonIngredientAPIListView.as_view()),
   
     url(r'^api/v1/ingredient/(?P<id>[0-9]+)$', recipes_views.IngredientAPIView.as_view()),
     url(r'^api/v1/ingredient/$', recipes_views.IngredientAPIListView.as_view()),
@@ -36,6 +39,7 @@ urlpatterns = [
 
     url(r'^api/v1/recipes-user-common-ingredients/$', recipes_views.RecipeUserCommonIngredientAPIView.as_view()),
     url(r'^api/v1/available-recipes/$', recipes_views.AvailableRecipeIngredientUserCommonIngredientAPIView.as_view()),
+    url(r'^api/v1/ocado-poc/$',recipes_views.OcadoPOCReceiptToUserCommonIngredientApiView.as_view()),
     # the 'api-root' from django rest-frameworks default router
     # http://www.django-rest-framework.org/api-guide/routers/#defaultrouter
     re_path(r'^$', RedirectView.as_view(url=reverse_lazy('api-root'), permanent=False)),

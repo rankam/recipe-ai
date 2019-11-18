@@ -24,11 +24,11 @@ class Ingredient(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
-        common_ingredient, self.confidence = predict(self.name)
-        uci = UserCommonIngredient.objects.get(common_ingredient=common_ingredient,
-                user=self.user)
+        self.common_ingredient_id, self.confidence = predict(self.name)
         super(Ingredient, self).save(*args, **kwargs)
-        self.user_common_ingredient.set([uci]) 
+        uci = UserCommonIngredient.objects.get(common_ingredient_id=self.common_ingredient_id,
+                user_id=self.user.id)
+        self.user_common_ingredient.add(uci) 
 
 class Recipe(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
