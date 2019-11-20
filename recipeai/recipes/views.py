@@ -41,7 +41,7 @@ class AvailableRecipeIngredientUserCommonIngredientAPIView(APIView):
             if confidence_level:
                 confidence_level = float(confidence_level) / 100.00
             else:
-                confidence_level = .99
+                confidence_level = 0
             items = fetch_available_recipes(request.user.id, confidence_level,
                     missing_ingredients_limit)
             paginator = PageNumberPagination()

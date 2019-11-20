@@ -1,6 +1,6 @@
 import fasttext
 
-model = fasttext.load_model('./recipeai/recipes/.ingredient_classifier_model')
+model = fasttext.load_model('/users/aaronrank/developer/recipe-ai/recipeai/recipes/.ingredient_classifier_model')
 
 def predict(text):
     '''Returns label, confidence'''

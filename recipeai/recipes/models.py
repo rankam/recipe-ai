@@ -2,11 +2,23 @@ from django.db import models
 from ..users.models import User
 from .ingredient_classifier import predict
 
-class CommonIngredient(models.Model):
-    __tablename__ = 'common_ingredient'
 
+class CommonIngredient(models.Model):
     label = models.CharField(max_length=160, primary_key=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+class Nutrient(models.Model):
+    name = models.CharField(max_length=160)
+    unit_type = models.CharField(max_length=160)
+
+class CommonIngredientNutrient(models.Model):
+    common_ingredient = models.ForeignKey(CommonIngredient,
+            on_delete=models.CASCADE)
+    nutrient = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
+    amount = models.FloatField()
+
+    class Meta:
+        db_table = 'recipes_common_ingredient_nutrient'
 
 class UserCommonIngredient(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

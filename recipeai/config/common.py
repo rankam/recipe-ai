@@ -26,6 +26,7 @@ class Common(Configuration):
         # Your apps
         'recipeai.users',
         'recipeai.recipes',
+        'recipeai.meal_planner',
 
     )
 

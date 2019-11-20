@@ -1,5 +1,6 @@
 from django.db import connection
 AVAILABLE_RECIPES_QUERY = """
+
 with recipe_user_common_ingredients as (
     select 
         r.id,
@@ -17,13 +18,15 @@ with recipe_user_common_ingredients as (
             'common_ingredient_id', i.common_ingredient_id,
             'user_id', i.user_id,
             'user_common_ingredient', row_to_json(uci)
-        ) as ingredients,
+     --       'nutrients', n.nutrients
+        ) as ingredient,
         uci.is_available
     from recipes_recipe_common_ingredients rci 
     join recipes_usercommoningredient uci on rci.commoningredient_id = uci.common_ingredient_id 
     join recipes_recipe_ingredients ri on rci.recipe_id = ri.recipe_id 
     join recipes_ingredient i on ri.ingredient_id = i.id and i.common_ingredient_id = rci.commoningredient_id 
     join recipes_recipe r on r.id = rci.recipe_id
+    --join nutrients n on uci.common_ingredient_id = n.common_ingredient_id
     where uci.user_id = %s 
 ),
 recipe_ingredient_count as (
@@ -54,11 +57,30 @@ from (
     select 
         r.id,
         r.name, 
-        array_agg(ingredients) as ingredients
+        array_agg(ingredient::jsonb ||
+        jsonb_build_object('nutrients', n.nutrients)) as ingredients
     from recipe_user_common_ingredients r 
     join available_recipes ar on r.recipe_id = ar.recipe_id 
+    join (
+        select 
+            ci.label as common_ingredient_id,
+            array_agg(
+                json_build_object(
+                    'name', n.name,
+                    'unit_type',n.unit_type,
+                    'amount', cin.amount,
+                    'common_ingredient_id',ci.label
+                        )
+                    ) nutrients
+        from recipes_commoningredient ci 
+        left join recipes_common_ingredient_nutrient cin on ci.label =
+        cin.common_ingredient_id 
+        left join recipes_nutrient n on cin.nutrient_id = n.id
+        group by ci.label
+
+    ) as n on r.ingredient ->> 'common_ingredient_id' = n.common_ingredient_id 
     group by r.name,r.id
-    order by r.id
+
     ) as recipes
 """
 
@@ -110,7 +132,7 @@ def fetch_recipes_by_user(user_id):
         results = cursor.fetchall()
     return [res[0] for res in results] if results else []
 
-def fetch_available_recipes(user_id, confidence_level=.99, num_missing_ings=0):
+def fetch_available_recipes(user_id, confidence_level=0, num_missing_ings=0):
     with connection.cursor() as cursor:
         cursor.execute(AVAILABLE_RECIPES_QUERY,
                 [
