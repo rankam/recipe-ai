@@ -8,6 +8,14 @@ from rest_framework.routers import DefaultRouter
 from rest_framework.authtoken import views
 from .users.views import UserViewSet, UserCreateViewSet
 from .recipes import views as recipes_views
+from .meal_planner.views import MealViewSet
+from .meal_planner.views import MealCreateViewSet
+from .meal_planner.views import MealPlanViewSet
+from .meal_planner.views import MealPlanCreateViewSet
+from .meal_planner.views import MealNutritionRequirementViewSet
+from .meal_planner.views import MealNutritionRequirementCreateViewSet
+from .meal_planner.views import DailyNutritionRequirementViewSet
+from .meal_planner.views import DailyNutritionRequirementCreateViewSet
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -15,6 +23,14 @@ router.register(r'users', UserCreateViewSet)
 router.register(r'usercommoningredient',
         recipes_views.UserCommonIngredientAPIListView,
         basename='UserCommonIngredient')
+router.register('meal', MealViewSet)
+router.register('meal', MealCreateViewSet)
+router.register('meal-plan', MealPlanViewSet)
+router.register('meal-plan', MealPlanCreateViewSet)
+router.register('meal-nutrition-requirement', MealNutritionRequirementViewSet)
+router.register('meal-nutrition-requirement', MealNutritionRequirementCreateViewSet)
+router.register('daily-nutrition-requirement', DailyNutritionRequirementViewSet)
+router.register('daily-nutrition-requirement', DailyNutritionRequirementCreateViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
