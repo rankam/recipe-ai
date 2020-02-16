@@ -31,7 +31,6 @@ class OcadoPOCReceiptToUserCommonIngredientApiView(APIView):
             return Response(status=404)
 
 
-
 class AvailableRecipeIngredientUserCommonIngredientAPIView(APIView):
 
     def get(self, request):
@@ -272,9 +271,9 @@ class RecipeAPIListView(APIView):
     def get(self, request, format=None):
         user_id = request.user.id
         if user_id:
-            items = Recipe.objects.filter(ingredients__user_common_ingredient__user_id=user_id)
+            items = Recipe.objects.filter(ingredients__user_common_ingredient__user_id=user_id).distinct()
         else:
-            items = Recipe.objects.all()
+            items = Recipe.objects.distinct()
         paginator = PageNumberPagination()
         result_page = paginator.paginate_queryset(items, request)
         serializer = RecipeSerializer(result_page, many=True)

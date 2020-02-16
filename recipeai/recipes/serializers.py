@@ -31,6 +31,7 @@ class IngredientSerializer(ModelSerializer):
 
 
 class RecipeSerializer(ModelSerializer):
+    name = serializers.CharField()
     ingredients = IngredientSerializer(many=True, read_only=True)
     user = UserSerializer(read_only=True)
     user_common_ingredient = UserCommonIngredientSerializer(many=True,
