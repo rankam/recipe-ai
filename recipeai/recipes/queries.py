@@ -19,30 +19,29 @@ with recipe_user_common_ingredients as (
             'user_id', i.user_id,
             'user_common_ingredient', row_to_json(uci)
      --       'nutrients', n.nutrients
-        ) as ingredient,
-        uci.is_available
-    from recipes_recipe_common_ingredients rci 
-    join recipes_usercommoningredient uci on rci.commoningredient_id = uci.common_ingredient_id 
+        ) as ingredient
+    from recipes_recipe r 
+    join recipes_recipe_common_ingredients rci on r.id = rci.recipe_id
     join recipes_recipe_ingredients ri on rci.recipe_id = ri.recipe_id 
+    join recipes_usercommoningredient uci on rci.commoningredient_id = uci.common_ingredient_id 
+    
     join recipes_ingredient i on ri.ingredient_id = i.id and i.common_ingredient_id = rci.commoningredient_id 
-    join recipes_recipe r on r.id = rci.recipe_id
+    --left recipes_recipe r on r.id = rci.recipe_id
     --join nutrients n on uci.common_ingredient_id = n.common_ingredient_id
-    where uci.user_id = %s 
+    where uci.user_id = %s and uci.common_ingredient_id is not null
 ),
 recipe_ingredient_count as (
     select 
         recipe_id, 
-        count(ruci.commoningredient_id) as num_ings
-    from recipe_user_common_ingredients ruci 
+        count(ingredient_id) as num_ings
+    from recipes_recipe_ingredients ruci 
     group by recipe_id 
-    having min(confidence) >= %s 
 ),
 recipe_available_ingredient_count as (
     select 
         recipe_id, 
         count(ruci.commoningredient_id) as num_ings
     from recipe_user_common_ingredients ruci 
-    where is_available = true 
     group by recipe_id 
     having min(confidence) >= %s 
 ),
@@ -57,28 +56,29 @@ from (
     select 
         r.id,
         r.name, 
-        array_agg(ingredient::jsonb ||
-        jsonb_build_object('nutrients', n.nutrients)) as ingredients
+        array_agg(ingredient) as ingredients
+        --array_agg(ingredient::jsonb ||
+        --jsonb_build_object('nutrients', n.nutrients)) as ingredients
     from recipe_user_common_ingredients r 
     join available_recipes ar on r.recipe_id = ar.recipe_id 
-    join (
-        select 
-            ci.label as common_ingredient_id,
-            array_agg(
-                json_build_object(
-                    'name', n.name,
-                    'unit_type',n.unit_type,
-                    'amount', cin.amount,
-                    'common_ingredient_id',ci.label
-                        )
-                    ) nutrients
-        from recipes_commoningredient ci 
-        left join recipes_common_ingredient_nutrient cin on ci.label =
-        cin.common_ingredient_id 
-        left join recipes_nutrient n on cin.nutrient_id = n.id
-        group by ci.label
+    -- join (
+    --     select 
+    --         ci.label as common_ingredient_id,
+    --         array_agg(
+    --             json_build_object(
+    --                 'name', n.name,
+    --                 'unit_type',n.unit_type,
+    --                 'amount', cin.amount,
+    --                 'common_ingredient_id',ci.label
+    --                     )
+    --                 ) nutrients
+    --     from recipes_commoningredient ci 
+    --     left join recipes_common_ingredient_nutrient cin on ci.label =
+    --     cin.common_ingredient_id 
+    --     left join recipes_nutrient n on cin.nutrient_id = n.id
+    --     group by ci.label
 
-    ) as n on r.ingredient ->> 'common_ingredient_id' = n.common_ingredient_id 
+    -- ) as n on r.ingredient ->> 'common_ingredient_id' = n.common_ingredient_id 
     group by r.name,r.id
 
     ) as recipes
@@ -137,7 +137,6 @@ def fetch_available_recipes(user_id, confidence_level=0, num_missing_ings=0):
         cursor.execute(AVAILABLE_RECIPES_QUERY,
                 [
                     user_id,
-                    confidence_level,
                     confidence_level,
                     num_missing_ings
                 ])

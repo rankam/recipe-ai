@@ -34,13 +34,27 @@ class OcadoPOCReceiptToUserCommonIngredientApiView(APIView):
 class AvailableRecipeIngredientUserCommonIngredientAPIView(APIView):
 
     def get(self, request):
+        missing_ingredients_limit = int(request.query_params.get('missing-ingredients-limit', 0))
+        confidence_level = request.query_params.get('confidence-level')
+        if confidence_level:
+            confidence_level = float(confidence_level) / 100.00
+        else:
+            confidence_level = .9
+        items = fetch_available_recipes(request.user.id, confidence_level,
+                missing_ingredients_limit)
+        paginator = PageNumberPagination()
+        result_page = paginator.paginate_queryset(items, request)
+        serializer = AvailableRecipeIngredientUserCommonIngredientSerializer(data=result_page, many=True)
+        if serializer.is_valid():
+            return paginator.get_paginated_response(serializer.data)
+        return Response(status=404)        
         try:
             missing_ingredients_limit = int(request.query_params.get('missing-ingredients-limit', 0))
             confidence_level = request.query_params.get('confidence-level')
             if confidence_level:
                 confidence_level = float(confidence_level) / 100.00
             else:
-                confidence_level = 0
+                confidence_level = .9
             items = fetch_available_recipes(request.user.id, confidence_level,
                     missing_ingredients_limit)
             paginator = PageNumberPagination()

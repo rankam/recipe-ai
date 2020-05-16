@@ -23,7 +23,11 @@ class CommonIngredientNutrient(models.Model):
 class UserCommonIngredient(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     common_ingredient = models.ForeignKey(CommonIngredient, on_delete=models.CASCADE)
-    is_available = models.BooleanField(default=False)
+
+class UserIngredientCommonIngredient(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    common_ingredient = models.ForeignKey(CommonIngredient, on_delete=models.CASCADE)
+    recipe_ingredient = models.ForeignKey('Ingredient', on_delete=models.CASCADE)
 
 class Ingredient(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -32,6 +36,7 @@ class Ingredient(models.Model):
     unit_type = models.CharField(max_length=160)
     confidence = models.FloatField()
     user_common_ingredient = models.ManyToManyField(UserCommonIngredient)
+    user_ingredient_common_ingredient = models.ManyToManyField(UserIngredientCommonIngredient)
     common_ingredient = models.ForeignKey(CommonIngredient, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
