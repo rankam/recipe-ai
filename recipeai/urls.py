@@ -20,7 +20,7 @@ from .meal_planner.views import DailyNutritionRequirementCreateViewSet
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'users', UserCreateViewSet)
-router.register(r'usercommoningredient',
+router.register(r'usercommoningredients',
         recipes_views.UserCommonIngredientAPIListView,
         basename='UserCommonIngredient')
 router.register('meal', MealViewSet)
@@ -31,6 +31,7 @@ router.register('meal-nutrition-requirement', MealNutritionRequirementViewSet)
 router.register('meal-nutrition-requirement', MealNutritionRequirementCreateViewSet)
 router.register('daily-nutrition-requirement', DailyNutritionRequirementViewSet)
 router.register('daily-nutrition-requirement', DailyNutritionRequirementCreateViewSet)
+from django.views.decorators.csrf import csrf_exempt
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -38,10 +39,12 @@ urlpatterns = [
     path('api-token-auth/', views.obtain_auth_token),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
-    url(r'^api/v1/commoningredient/(?P<id>[0-9]+)$', recipes_views.CommonIngredientAPIView.as_view()),
+    url(r'^api/v1/search-user-common-ingredients/$', recipes_views.UserCommonIngredientSearchAPIView.as_view()),
+    url(r'^api/v1/search-common-ingredients/$', recipes_views.CommonIngredientSearchAPIView.as_view()),
+    url(r'^api/v1/commoningredient/<int:pk>/$', recipes_views.CommonIngredientAPIView.as_view()),
     url(r'^api/v1/commoningredient/$', recipes_views.CommonIngredientAPIListView.as_view()),
   
-    url(r'^api/v1/usercommoningredient/(?P<id>[0-9]+)$', recipes_views.UserCommonIngredientAPIView.as_view()),
+    url(r'^api/v1/usercommoningredient/(?P<id>[0-9]+)/$', recipes_views.UserCommonIngredientAPIView.as_view()),
 #    url(r'^api/v1/usercommoningredient/$', recipes_views.UserCommonIngredientAPIListView.as_view()),
   
     url(r'^api/v1/ingredient/(?P<id>[0-9]+)$', recipes_views.IngredientAPIView.as_view()),

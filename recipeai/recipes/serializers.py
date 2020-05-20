@@ -3,6 +3,23 @@ from recipeai.recipes.models import CommonIngredient, UserCommonIngredient, Ingr
 from rest_framework import serializers
 from recipeai.users.serializers import UserSerializer
 
+class CommonIngredientSearchSerializer(serializers.Serializer):
+
+    label = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+    class Meta:
+        fields = ('label', 'created_at',)    
+
+class UserCommonIngredientSearchSerializer(serializers.Serializer):
+
+    id = serializers.IntegerField()
+    user = serializers.UUIDField()
+    common_ingredient = serializers.CharField()
+
+    class Meta:
+        fields = ('id', 'user', 'common_ingredient',)          
+
 class CommonIngredientSerializer(ModelSerializer):
 
     class Meta:
@@ -64,7 +81,10 @@ class AvailableRecipeIngredientUserCommonIngredientSerializer(serializers.Serial
     id = serializers.IntegerField()
     name = serializers.CharField()
     ingredients = serializers.ListField() 
+    user = UserSerializer(read_only=True, required=False)
+    num_missing_ingredients = serializers.IntegerField()
+    calories = serializers.FloatField(required=False)
 
     class Meta:
-        fields = ('id',  'name',  'ingredients',)
+        fields = ('id',  'name',  'ingredients', 'num_missing_ingredients', 'calories',)
 

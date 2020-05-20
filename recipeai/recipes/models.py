@@ -8,8 +8,9 @@ class CommonIngredient(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class Nutrient(models.Model):
-    name = models.CharField(max_length=160)
+    name = models.CharField(max_length=160, unique=True)
     unit_type = models.CharField(max_length=160)
+
 
 class CommonIngredientNutrient(models.Model):
     common_ingredient = models.ForeignKey(CommonIngredient,
@@ -17,12 +18,21 @@ class CommonIngredientNutrient(models.Model):
     nutrient = models.ForeignKey(Nutrient, on_delete=models.CASCADE)
     amount = models.FloatField()
 
+
     class Meta:
         db_table = 'recipes_common_ingredient_nutrient'
+        constraints = [
+            models.UniqueConstraint(fields=['nutrient', 'common_ingredient'], name='nutrient_common_ingredient'),
+        ]          
 
 class UserCommonIngredient(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     common_ingredient = models.ForeignKey(CommonIngredient, on_delete=models.CASCADE)
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'common_ingredient'], name='user_common_ingredient'),
+        ]    
 
 class UserIngredientCommonIngredient(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

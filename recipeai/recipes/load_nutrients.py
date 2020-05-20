@@ -15,38 +15,42 @@ LABEL_PREFIX = '__label__'
 filetxt = ''
 KNOWN_UNITS = []
 matches = []
-nutrients_to_keep = ['Total lipid (fat)',  
+nutrients_to_keep = [
+'Total lipid (fat)',  
 'Protein',                             
-'Sodium, Na',                          
+# 'Sodium, Na',                          
 'Carbohydrate, by difference',         
 'Energy',                              
 'Sugars, total including NLEA',        
 'Fatty acids, total saturated',        
-'Cholesterol',                         
-'Fiber, total dietary',                
-'Iron, Fe',                            
-'Calcium, Ca',                         
+# 'Cholesterol',                         
+# 'Fiber, total dietary',                
+# 'Iron, Fe',                            
+# 'Calcium, Ca',                         
 'Fatty acids, total trans',            
-'Vitamin C, total ascorbic acid',      
-'Vitamin A, IU',                       
+# 'Vitamin C, total ascorbic acid',      
+# 'Vitamin A, IU',                       
 'Potassium, K',                         
 'Fatty acids, total monounsaturated',   
 'Fatty acids, total polyunsaturated',   
-'Vitamin D',                            
-'Niacin',                               
-'Thiamin',                              
-'Riboflavin',                           
-'Phosphorus, P',                        
-'Magnesium, Mg',                        
-'Vitamin B-6',                          
-'Zinc, Zn',                             
-'Vitamin B-12',                         
-'Folate, total',                        
-'Copper, Cu',                           
-'Water',                                
+# 'Vitamin D',                            
+# 'Niacin',                               
+# 'Thiamin',                              
+# 'Riboflavin',                           
+# 'Phosphorus, P',                        
+# 'Magnesium, Mg',                        
+# 'Vitamin B-6',                          
+# 'Zinc, Zn',                             
+# 'Vitamin B-12',                         
+# 'Folate, total',                        
+# 'Copper, Cu',                           
+# 'Water',                                
 'Sugars, added',                        
-'Folic acid',                           
-'Selenium, Se']
+# 'Folic acid',                           
+# 'Selenium, Se'
+]
+c = 0
+n = legacy_foods.description.size
 for ingredient, unit_name, amount,nutrient_name in zip(legacy_foods.description,
         legacy_foods.unit_name, legacy_foods.amount, legacy_foods.name):
     target = ingredient.replace(',', '').replace("'", '').replace(';', '')
@@ -63,16 +67,29 @@ for ingredient, unit_name, amount,nutrient_name in zip(legacy_foods.description,
     target = target.lower().replace(' ', '-')
     label = f'{LABEL_PREFIX}{target}'
     try:
-        ci = CommonIngredient.objects.get(label=label)
         if nutrient_name in nutrients_to_keep:
-            nut = Nutrient(name=nutrient_name, unit_type=unit_name)
-            nut.save()
-            print('nutrient saved')
+            ci = CommonIngredient.objects.get(label=label)            
+            try:
+                nut = Nutrient(name=nutrient_name, unit_type=unit_name)
+                nut.save()
+            except Exception as e:
+                print('error getting nutrient', e)
+                nut = Nutrient.objects.get(name=nutrient_name)
+            # print('nutrient saved')
             cin = CommonIngredientNutrient(common_ingredient=ci, nutrient=nut,
                     amount=amount)
             cin.save()
-            print('common ingredient nutrient saved')
-    except:
+
+            # print('common ingredient nutrient saved')
+            c += 1
+            r = n - c
+            # print('Added:', r, 'remaining')
+    except Exception as e:
+        print('Main exception', e)
+        c += 1
+        r = n - c
+        if r % 10000 == 0:
+            print('Not added:', r, 'remaining')        
         continue
 
 

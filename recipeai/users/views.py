@@ -3,7 +3,7 @@ from rest_framework.permissions import AllowAny
 from .models import User
 from .permissions import IsUserOrReadOnly
 from .serializers import CreateUserSerializer, UserSerializer
-
+from django.views.decorators.csrf import csrf_exempt
 
 class UserViewSet(mixins.RetrieveModelMixin,
                   mixins.UpdateModelMixin,
