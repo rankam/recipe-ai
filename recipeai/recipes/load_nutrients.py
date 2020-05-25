@@ -86,6 +86,7 @@ for ingredient, unit_name, amount,nutrient_name in zip(legacy_foods.description,
             # print('Added:', r, 'remaining')
     except Exception as e:
         print('Main exception', e)
+        print('label is ',label)
         c += 1
         r = n - c
         if r % 10000 == 0:

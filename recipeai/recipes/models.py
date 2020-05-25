@@ -1,11 +1,23 @@
 from django.db import models
+from django.contrib.postgres.search import SearchVectorField
 from ..users.models import User
 from .ingredient_classifier import predict
+import logging
 
 
 class CommonIngredient(models.Model):
     label = models.CharField(max_length=160, primary_key=True)
+    display_name = models.CharField(max_length=160, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+  
+    def save(self, *args, **kwargs):
+        if not self.display_name:
+            self.display_name = self.label_to_display_name()
+        super(CommonIngredient, self).save(*args, **kwargs)
+
+    def label_to_display_name(self):
+        return self.label.replace('__label__', '').replace('-', ' ').title()
+
 
 class Nutrient(models.Model):
     name = models.CharField(max_length=160, unique=True)
@@ -52,17 +64,28 @@ class Ingredient(models.Model):
 
     def save(self, *args, **kwargs):
         self.common_ingredient_id, self.confidence = predict(self.name)
-        super(Ingredient, self).save(*args, **kwargs)
-        uci = UserCommonIngredient.objects.get(common_ingredient_id=self.common_ingredient_id,
+        super(Ingredient, self).save(*args, **kwargs)        
+        try:
+            uci = UserCommonIngredient.objects.get(common_ingredient_id=self.common_ingredient_id,
                 user_id=self.user.id)
-        self.user_common_ingredient.add(uci) 
+            self.user_common_ingredient.add(uci) 
+            # uici = UserIngredientCommonIngredient(**{
+            #     'user': self.user,
+            #     'common_ingredient': self.common_ingredient_id, 
+            #     'recipe_ingredient': self.id})
+
+        except Exception as e:
+            x = 1
 
 class Recipe(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=160)
-    ingredients = models.ManyToManyField(Ingredient)
-    common_ingredients = models.ManyToManyField(CommonIngredient)
+    ingredients = models.ManyToManyField(Ingredient, null=True)
+    common_ingredients = models.ManyToManyField(CommonIngredient, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    search_vector = SearchVectorField(null=True)
+  
+
 
 class Instruction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -70,4 +93,5 @@ class Instruction(models.Model):
     order = models.IntegerField()
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+
 

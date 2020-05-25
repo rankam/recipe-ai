@@ -20,7 +20,7 @@ from .meal_planner.views import DailyNutritionRequirementCreateViewSet
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'users', UserCreateViewSet)
-router.register(r'usercommoningredients',
+router.register(r'add-usercommoningredient',
         recipes_views.UserCommonIngredientAPIListView,
         basename='UserCommonIngredient')
 router.register('meal', MealViewSet)
@@ -39,23 +39,30 @@ urlpatterns = [
     path('api-token-auth/', views.obtain_auth_token),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
+
+    url(r'^api/v1/classify-ingredient-common-ingredient/$', recipes_views.ClassifyIngredientAsCommonIngredientView.as_view()),
+
+
+    url(r'^api/v1/usercommoningredients/$', recipes_views.UserCommonIngredientSearchAPIView.as_view()),
     url(r'^api/v1/search-user-common-ingredients/$', recipes_views.UserCommonIngredientSearchAPIView.as_view()),
     url(r'^api/v1/search-common-ingredients/$', recipes_views.CommonIngredientSearchAPIView.as_view()),
     url(r'^api/v1/commoningredient/<int:pk>/$', recipes_views.CommonIngredientAPIView.as_view()),
-    url(r'^api/v1/commoningredient/$', recipes_views.CommonIngredientAPIListView.as_view()),
+    url(r'^api/v1/commoningredient/$', recipes_views.CommonIngredientSearchAPIView.as_view()),
   
     url(r'^api/v1/usercommoningredient/(?P<id>[0-9]+)/$', recipes_views.UserCommonIngredientAPIView.as_view()),
-#    url(r'^api/v1/usercommoningredient/$', recipes_views.UserCommonIngredientAPIListView.as_view()),
+    # url(r'^api/v1/add-usercommoningredient/$', recipes_views.UserCommonIngredientAPIListView.as_view()),
   
     url(r'^api/v1/ingredient/(?P<id>[0-9]+)$', recipes_views.IngredientAPIView.as_view()),
     url(r'^api/v1/ingredient/$', recipes_views.IngredientAPIListView.as_view()),
   
     url(r'^api/v1/recipe/(?P<id>[0-9]+)$', recipes_views.RecipeAPIView.as_view()),
     url(r'^api/v1/recipe/$', recipes_views.RecipeAPIListView.as_view()),
+    url(r'^api/v1/recipe/(?P<id>[0-9]+)/ingredient/$', recipes_views.RecipeIngredientApiView.as_view()),
   
     url(r'^api/v1/instruction/(?P<id>[0-9]+)$', recipes_views.InstructionAPIView.as_view()),
     url(r'^api/v1/instruction/$', recipes_views.InstructionAPIListView.as_view()),
 
+    # returns all recipes with a list of ingredients that the user has - does not return the ingredients the user does not have
     url(r'^api/v1/recipes-user-common-ingredients/$', recipes_views.RecipeUserCommonIngredientAPIView.as_view()),
     url(r'^api/v1/available-recipes/$', recipes_views.AvailableRecipeIngredientUserCommonIngredientAPIView.as_view()),
     url(r'^api/v1/ocado-poc/$',recipes_views.OcadoPOCReceiptToUserCommonIngredientApiView.as_view()),
