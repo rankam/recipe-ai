@@ -368,14 +368,36 @@ class IngredientAPIView(APIView):
             return Response(status=404)
 
     def put(self, request, id, format=None):
+        request.data['user_id'] = USER_ID
+        print('request data is ', request.data)
         try:
             item = Ingredient.objects.get(pk=id)
+            nutrients = []
+            for nutrient in CommonIngredientNutrient.objects.filter(common_ingredient_id=item.common_ingredient_id):
+                tmp = {
+                    'id': nutrient.id,
+                    'amount': nutrient.amount,
+                    'nutrient_id': nutrient.nutrient_id,
+                    'name': nutrient.nutrient.name,
+                }
+                nutrients.append(tmp)
+            # cis = CommonIngredientSerializer(item.common_ingredient, data={'nutrients':nutrients.values(), 'label': item.common_ingredient_id})
+            # if cis.is_valid():
+            #     request.data['common_ingredient'] = cis
+            #     print(request.data)
+            # else:
+            #     print('fuck')
         except Ingredient.DoesNotExist:
             return Response(status=404)
         serializer = IngredientSerializer(item, data=request.data)
         if serializer.is_valid():
             serializer.save()
+            # print(serializer.data['nutrients'])
+            print(serializer.data['common_ingredient'])
+            rsp = serializer.data.copy()
+            rsp['common_ingredient']['nutrients'] = nutrients
             return Response(serializer.data)
+        print(serializer.errors)
         return Response(serializer.errors, status=400)
 
     def delete(self, request, id, format=None):

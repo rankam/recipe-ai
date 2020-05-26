@@ -107,7 +107,7 @@ recipes_filepath = '/Users/aaronrank/Downloads/recipe1M_layers/layer1.json'
 recipes_100_filepath = '/Users/aaronrank/Downloads/recipe1M_layers/layer1_100.json'
 
 # c = 0
-with open(recipes_filepath, 'r') as f:
+with open(recipes_100, 'r') as f:
     print('reading file')
     recipes = json.loads(f.read())
     print('file read')
@@ -128,8 +128,8 @@ with open(recipes_filepath, 'r') as f:
                 unit_value = ''
                 ingredient_name = ''
                 ingredient_text = ingredient['text'].lower()
-                for p in string.punctuation:
-                    ingredient_text = ingredient_text.replace(p, '')
+                # for p in string.punctuation:
+                #     ingredient_text = ingredient_text.replace(p, '')
                 ingredient_text = ingredient_text.strip()
                 for token in ingredient_text.split():
                     if is_fraction(token):
@@ -175,28 +175,27 @@ from recipeai.recipes.models import Ingredient
 from recipeai.users.models import User
 from recipeai.recipes.models import Recipe
 
-my_ings = set()
+
+aarons = User.objects.filter(username__contains='aaron-')
+ingredinets = list(Ingredient.objects.all())
 # user_id = '85ec3e6a-35f8-4618-b854-e68f1cf25659'
-user = User.objects.get(id=user_id)
-ings = [x for x in Ingredient.objects.all() if random.random() < .2]
-for i in ings:
-    if i.common_ingredient not in my_ings and random.random() < .4:
-        if len(my_ings) < 33:
-            try:
-                uci = UserCommonIngredient(**{'user': user,'common_ingredient': i.common_ingredient})
-                uci.save()
-                uici = UserIngredientCommonIngredient(**{'user': user,'common_ingredient': i.common_ingredient, 'recipe_ingredient': i})
-                # uci.save()
-                uici.save()
-                my_ings.add(i.common_ingredient)
-            except:
-                print('err')
-    elif '__label__chicken-broiler-or-fryers-breast-skinless-boneless-meat-' in i.common_ingredient and i.common_ingredient not in my_ings:
-        my_ings.add(i.common_ingredient)
-        i.is_available = True 
-        i.save()
-    elif '__label__beef-grassfed-ground-raw' in i.common_ingredient and i.common_ingredient not in my_ings:
-        my_ings.add(i.common_ingredient)
-        i.is_available = True 
-        i.save()
+for user in aarons[2:]:
+    num_ingredients = random.randint(0, 100)
+    my_ings = set()
+# user = User.objects.get(id=user_id)
+
+    ings = [x for x in ingredients if random.random() < .2]
+    for i in ings:
+        if i.common_ingredient not in my_ings and random.random() < .4:
+            if len(my_ings) < num_ingredients:
+                try:
+                    uci = UserCommonIngredient(**{'user': user,'common_ingredient': i.common_ingredient})
+                    uci.save()
+                    uici = UserIngredientCommonIngredient(**{'user': user,'common_ingredient': i.common_ingredient, 'recipe_ingredient': i})
+                    # uci.save()
+                    uici.save()
+                    my_ings.add(i.common_ingredient)
+                except:
+                    print('err')
+    print('aaron finished')
 
