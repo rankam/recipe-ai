@@ -147,3 +147,134 @@ def parse_and_add_user_common_ingredients(user_id, text=None):
         user_common_ingredients.append(uci)
     return user_common_ingredients
 
+
+
+
+import PyPDF2
+import string
+
+
+
+
+
+
+def percent_upper(text):
+    '''
+    returns the number of uppercase strings / the number of total strings
+    '''
+    text = text.replace(' ', '').strip()
+    N = 0
+    D = 0
+    for char in text:
+        if char.isspace() or char.isnumeric() or char in string.punctuation:
+            continue
+        D += 1
+        if char.isupper():
+            N += 1
+    if D == 0 or D < 4:
+        return 0
+    return round(N / D, 2)
+
+
+def strip_ending_price(text):
+    pattern = re.compile(r'\(£[0-9]+.*\)')
+    match = re.search(pattern, text)
+    if match:
+        return text[:match.start()].strip()
+    return text
+
+def parse_ingredient_text(text):
+    discard_word_patterns = [
+            re.compile(r"^eat "),
+            re.compile(r" eat "),
+            re.compile(r" now "),
+            re.compile(r"^now "),
+            re.compile(r"^essential "),
+            re.compile(r" essential "),
+            re.compile(r"^british "),
+            re.compile(r" british "),
+            re.compile(r" english "),
+            re.compile(r"^english "),
+            re.compile(r"^waitrose "),
+            re.compile(r" waitrose "),
+            re.compile(r"^reduced fat ") ,
+            re.compile(r" reduced fat ") 
+    ] 
+    text = text.lower()  
+    words = text.split(" ")
+    units = ''
+    unit_type = ''
+    ingredient_name = ''
+    if words[-1][0].isnumeric():
+        last_word = words[-1]
+        for i,char in enumerate(last_word):
+            if char.isnumeric() or char == '.':
+                units += char
+            else:
+                unit_type = last_word[i:]
+                break
+        ingredient_name = ' '.join(words[:-1])
+    else:
+        units = '1'
+    ingredient_name_for_prediction = ingredient_name
+    for discard_pattern in discard_word_patterns:
+        ingredient_name_for_prediction = re.sub(discard_pattern, '', ingredient_name_for_prediction)
+    return {
+            'ingredient_name_for_prediction': ingredient_name_for_prediction,
+            'ingredient_name': ingredient_name,
+            'unit_type': unit_type,
+            'units': units
+        }
+
+
+
+pdf_path = '/users/aaronrank/developer/recipe-ai/recipeai/recipes/ocr/ocado.pdf'
+pdfFileObj = open(pdf_path, 'rb')
+pdfReader = PyPDF2.PdfFileReader(pdfFileObj)    
+
+items = []
+prev_item_was_upper = False
+text = []
+product_use_by_label = ''
+offers_savings_count = 0
+for i in range(pdfReader.numPages):
+    pageObj = pdfReader.getPage(i)
+    page_text = pageObj.extractText().split('\n')
+    text.extend(page_text)
+for item in text:
+    item = strip_ending_price(item)
+    if item.startswith("Products with"):
+        product_use_by_label = item 
+    if product_use_by_label == "Products with no 'use-by' date":
+        continue
+    if 'Offers savings' in item:
+        offers_savings_count += 1
+        if offers_savings_count > 1:
+            break
+    if prev_item_was_upper and percent_upper(item) > .8:
+        prev_item = items[-1]
+        new_item = f'{prev_item} {item}'
+        new_item = strip_ending_price(new_item)
+        items[-1] = new_item
+        prev_item_was_upper = True
+    elif percent_upper(item) > .8:
+        items.append(item)
+        prev_item_was_upper = True
+    else:
+        prev_item_was_upper = False
+
+predictions = []
+for item in items:
+    result = parse_ingredient_text(item)
+    common_ingredient, confidence = predict(result['ingredient_name_for_prediction'])
+    result['common_ingredient_id'] = common_ingredient 
+    result['confidence'] = confidence
+    predictions.append(result)
+
+
+
+
+
+
+
+
